@@ -26,68 +26,102 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" alignment="1" attributes="0">
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" attributes="0">
-                      <EmptySpace min="-2" pref="54" max="-2" attributes="0"/>
-                      <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                          <Component id="dobles" pref="190" max="32767" attributes="0"/>
-                          <Component id="triples" alignment="0" max="32767" attributes="0"/>
-                          <Component id="tirosRealizados" alignment="0" max="32767" attributes="0"/>
-                      </Group>
-                      <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
-                  </Group>
-                  <Group type="102" alignment="1" attributes="0">
-                      <EmptySpace max="-2" attributes="0"/>
+          <Group type="102" attributes="0">
+              <EmptySpace min="-2" pref="41" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                  <Group type="102" alignment="0" attributes="0">
                       <Component id="nombre" min="-2" pref="199" max="-2" attributes="0"/>
-                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="textoNombre" max="32767" attributes="0"/>
+                  </Group>
+                  <Component id="tirosTriplesMetidos" min="-2" pref="201" max="-2" attributes="0"/>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                          <Component id="TirosDoblesRealizados" alignment="1" max="32767" attributes="0"/>
+                          <Component id="tirosDoblesMetidos" alignment="1" min="-2" pref="214" max="-2" attributes="0"/>
+                          <Component id="tirosTriplesRealizados" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" alignment="0" attributes="0">
+                              <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
+                              <Component id="contadorTirosDoblesRealizados" min="-2" pref="140" max="-2" attributes="0"/>
+                          </Group>
+                          <Group type="102" alignment="0" attributes="0">
+                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="contadorTriplesRealizados" min="-2" pref="140" max="-2" attributes="0"/>
+                                  <Component id="contadorTirosDoblesMetidos" min="-2" pref="140" max="-2" attributes="0"/>
+                                  <Component id="contadorTriplesMetidos" alignment="0" min="-2" pref="140" max="-2" attributes="0"/>
+                              </Group>
+                          </Group>
+                          <Group type="102" alignment="1" attributes="0">
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="botonCalcular" min="-2" pref="109" max="-2" attributes="0"/>
+                          </Group>
+                      </Group>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                          <Component id="tirosRealizados" max="32767" attributes="0"/>
+                          <Component id="tirosLibresMetidos" alignment="1" min="-2" pref="214" max="-2" attributes="0"/>
+                      </Group>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Group type="102" alignment="0" attributes="0">
+                              <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
+                              <Component id="contadorTirosLibresMetidos" min="-2" pref="140" max="-2" attributes="0"/>
+                          </Group>
+                          <Group type="102" alignment="1" attributes="0">
+                              <EmptySpace min="-2" pref="14" max="-2" attributes="0"/>
+                              <Component id="contadorTirosLibresRealizados" min="-2" pref="140" max="-2" attributes="0"/>
+                          </Group>
+                      </Group>
                   </Group>
               </Group>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                      <Component id="contadorDobles" alignment="0" pref="140" max="32767" attributes="0"/>
-                      <Component id="contadorTriples" alignment="0" max="32767" attributes="0"/>
-                      <Component id="contadorTirosRealizados" alignment="0" max="32767" attributes="0"/>
-                  </Group>
-                  <Component id="textoNombre" pref="140" max="32767" attributes="0"/>
-              </Group>
-              <EmptySpace min="-2" pref="29" max="-2" attributes="0"/>
-          </Group>
-          <Group type="102" alignment="1" attributes="0">
-              <EmptySpace max="32767" attributes="0"/>
-              <Component id="botonCalcular" min="-2" pref="109" max="-2" attributes="0"/>
-              <EmptySpace min="-2" pref="159" max="-2" attributes="0"/>
+              <EmptySpace pref="19" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
-              <EmptySpace pref="32" max="32767" attributes="0"/>
-              <Group type="103" groupAlignment="1" attributes="0">
-                  <Component id="contadorTirosRealizados" min="-2" max="-2" attributes="0"/>
-                  <Group type="102" attributes="0">
-                      <Group type="103" groupAlignment="3" attributes="0">
-                          <Component id="nombre" alignment="3" min="-2" max="-2" attributes="0"/>
-                          <Component id="textoNombre" alignment="3" min="-2" max="-2" attributes="0"/>
-                      </Group>
-                      <EmptySpace type="separate" max="-2" attributes="0"/>
-                      <Component id="tirosRealizados" min="-2" max="-2" attributes="0"/>
-                  </Group>
-              </Group>
-              <EmptySpace type="separate" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="1" attributes="0">
-                  <Component id="dobles" min="-2" max="-2" attributes="0"/>
-                  <Component id="contadorDobles" min="-2" max="-2" attributes="0"/>
-              </Group>
-              <EmptySpace type="separate" max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="31" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="triples" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="contadorTriples" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="nombre" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="textoNombre" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace min="-2" pref="65" max="-2" attributes="0"/>
-              <Component id="botonCalcular" min="-2" pref="37" max="-2" attributes="0"/>
+              <EmptySpace type="separate" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="contadorTirosLibresRealizados" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="tirosRealizados" alignment="1" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="tirosLibresMetidos" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="contadorTirosLibresMetidos" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="TirosDoblesRealizados" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="contadorTirosDoblesRealizados" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="contadorTirosDoblesMetidos" min="-2" max="-2" attributes="0"/>
+                  <Component id="tirosDoblesMetidos" alignment="1" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="contadorTriplesRealizados" min="-2" max="-2" attributes="0"/>
+                  <Component id="tirosTriplesRealizados" alignment="1" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="tirosTriplesMetidos" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="contadorTriplesMetidos" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
               <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
+              <Component id="botonCalcular" min="-2" pref="37" max="-2" attributes="0"/>
+              <EmptySpace pref="15" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -108,17 +142,47 @@
         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
           <Font name="Bookman Old Style" size="18" style="3"/>
         </Property>
-        <Property name="text" type="java.lang.String" value="Tiros realizados"/>
+        <Property name="text" type="java.lang.String" value="Tiros libres realizados"/>
       </Properties>
     </Component>
-    <Component class="javax.swing.JSpinner" name="contadorTirosRealizados">
+    <Component class="javax.swing.JSpinner" name="contadorTirosLibresRealizados">
       <Properties>
         <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
           <SpinnerModel initial="0" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
         </Property>
       </Properties>
     </Component>
-    <Component class="javax.swing.JLabel" name="dobles">
+    <Component class="javax.swing.JLabel" name="tirosLibresMetidos">
+      <Properties>
+        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+          <Font name="Bookman Old Style" size="18" style="3"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Tiros libres metidos"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="contadorTirosLibresMetidos">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="0" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="TirosDoblesRealizados">
+      <Properties>
+        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+          <Font name="Bookman Old Style" size="18" style="3"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Tiros de 2 realizados"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="contadorTirosDoblesRealizados">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="0" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="tirosDoblesMetidos">
       <Properties>
         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
           <Font name="Bookman Old Style" size="18" style="3"/>
@@ -126,14 +190,29 @@
         <Property name="text" type="java.lang.String" value="Tiros metidos de 2"/>
       </Properties>
     </Component>
-    <Component class="javax.swing.JSpinner" name="contadorDobles">
+    <Component class="javax.swing.JSpinner" name="contadorTirosDoblesMetidos">
       <Properties>
         <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
           <SpinnerModel initial="0" minimum="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
         </Property>
       </Properties>
     </Component>
-    <Component class="javax.swing.JLabel" name="triples">
+    <Component class="javax.swing.JLabel" name="tirosTriplesRealizados">
+      <Properties>
+        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+          <Font name="Bookman Old Style" size="18" style="3"/>
+        </Property>
+        <Property name="text" type="java.lang.String" value="Tiros de 3 realizados"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSpinner" name="contadorTriplesRealizados">
+      <Properties>
+        <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
+          <SpinnerModel initial="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="tirosTriplesMetidos">
       <Properties>
         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
           <Font name="Bookman Old Style" size="18" style="3"/>
@@ -141,7 +220,7 @@
         <Property name="text" type="java.lang.String" value="Tiros metidos de 3"/>
       </Properties>
     </Component>
-    <Component class="javax.swing.JSpinner" name="contadorTriples">
+    <Component class="javax.swing.JSpinner" name="contadorTriplesMetidos">
       <Properties>
         <Property name="model" type="javax.swing.SpinnerModel" editor="org.netbeans.modules.form.editors2.SpinnerModelEditor">
           <SpinnerModel initial="0" numberType="java.lang.Integer" stepSize="1" type="number"/>
