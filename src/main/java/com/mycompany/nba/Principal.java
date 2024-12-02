@@ -1,5 +1,6 @@
 package com.mycompany.nba;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,15 +13,47 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class Principal extends javax.swing.JFrame {
 
-        public Principal() {
-            initComponents();
-            this.setLocationRelativeTo(null);
-            botonCalcular.addActionListener(evt -> generarExcel()); 
+    public Principal() {
+        initComponents();
+        this.setLocationRelativeTo(null);
+        seleccionarEquipos.addActionListener(evt -> elegirEquipo());
+        botonCalcular.addActionListener(evt -> generarExcel()); 
+        
+    }
+    
+    
+    //Version 3.0 Crear desplegables para los equipos y jugadores
+    private String[] jugadoresChicago = {"Michael Jordan", "Scottie Pippen", "Dennis Rodman", "Steve Kerr", "Toni Kukoc"};
+    private String[] jugadoresLakers = {"Kobe Bryant", "Shaquille O-Neal", "Magic Johnson", "Kareem Abdul-Jabbar", "James Worthy"};
+    
+    private void elegirEquipo(){
+        
+        String seleccionarEquipo = (String) seleccionarEquipos.getSelectedItem();
+        
+        // Borramos las anteriores opciones marcadas para evitar duplicar los jugadores
+        seleccionarJugadores.removeAllItems();
+        
+        if ("Chicago Bulls".equals(seleccionarEquipo)){
+            for (String jugador : jugadoresChicago){
+                seleccionarJugadores.addItem(jugador);
+            }
+        }else if ("Los Angeles Lakers".equals(seleccionarEquipo)) {
+            for (String jugador : jugadoresLakers){
+                seleccionarJugadores.addItem(jugador);
+            }
         }
-
+    }
+    
     private void generarExcel() {
+        
+        // Recuperar el equipo y jugador seleccionados
+        String equipoSeleccionado = (String) seleccionarEquipos.getSelectedItem();
+        String jugadorSeleccionado = (String) seleccionarJugadores.getSelectedItem();
+        
+        
+       
+        
         //Primera ventana con los valores de la version 1.5
-        String nombre = textoNombre.getText();
         int tirosLibresRealizados = (Integer) contadorTirosLibresRealizados.getValue();
         int tirosLibresMetidos = (Integer) contadorTirosLibresMetidos.getValue();
         int tirosDoblesRealizados = (Integer) contadorTirosDoblesRealizados.getValue();
@@ -72,170 +105,214 @@ public class Principal extends javax.swing.JFrame {
                                                     "TS: " + TS + "\n" + 
                                                     "Eficiencia del jugador: " + eficiencia);
         
+        
         try {
-            crearArchivoExcel("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Resultados_NBA.xlsx", nombre, tirosLibresRealizados, tirosLibresMetidos, tirosDoblesRealizados,tirosDoblesMetidos,tirosTriplesRealizados,tirosTriplesMetidos, FG, EFG, TS, puntos, rebotes , asistencias, robos, perdidas, taponesRealizados, taponesRecibidos, faltasRealizadas, faltasRecibidas,eficiencia);
-            javax.swing.JOptionPane.showMessageDialog(this, "Archivo actualizado");
+            if("Chicago Bulls".equals(equipoSeleccionado)){
+                crearArchivoExce("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Chicago Bulls.xlsx", jugadorSeleccionado,tirosLibresRealizados, tirosLibresMetidos, tirosDoblesRealizados,tirosDoblesMetidos,tirosTriplesRealizados,tirosTriplesMetidos, FG, EFG, TS, puntos, rebotes , asistencias, robos, perdidas, taponesRealizados, taponesRecibidos, faltasRealizadas, faltasRecibidas,eficiencia);
+                calcularMediasPorEquipo("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Chicago Bulls.xlsx");
+                javax.swing.JOptionPane.showMessageDialog(this, "Archivo actualizado");
+            }else if("Los Angeles Lakers".equals(equipoSeleccionado)){
+                crearArchivoExce("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Los Angeles Lakers.xlsx", jugadorSeleccionado,tirosLibresRealizados, tirosLibresMetidos, tirosDoblesRealizados,tirosDoblesMetidos,tirosTriplesRealizados,tirosTriplesMetidos, FG, EFG, TS, puntos, rebotes , asistencias, robos, perdidas, taponesRealizados, taponesRecibidos, faltasRealizadas, faltasRecibidas,eficiencia);
+                calcularMediasPorEquipo("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Los Angeles Lakers.xlsx");
+                javax.swing.JOptionPane.showMessageDialog(this, "Archivo actualizado");
+            }
         } catch (IOException e) {
         }
     }
-
-    private void crearArchivoExcel(String archivos, String jugador, int tirosLibresRealizados, int tirosLibresMetidos, int tirosDoblesRealizados,int tirosDoblesMetidos,int tirosTriplesRealizados,int tirosTriplesMetidos, double FG, double EFG,double TS,int puntos,int rebotes, int asistencias, int robos, int perdidas, int taponesRealizados, int taponesRecibidos, int faltasRealizadas, int faltasRecibidas, double eficiencia )throws IOException {
     
-        Workbook excel ;
-        Sheet pagina ;
+    private void crearArchivoExce(String rutaArchivo, String jugador, int tirosLibresRealizados, int tirosLibresMetidos, int tirosDoblesRealizados,int tirosDoblesMetidos,int tirosTriplesRealizados,int tirosTriplesMetidos, double FG, double EFG,double TS,int puntos,int rebotes, int asistencias, int robos, int perdidas, int taponesRealizados, int taponesRecibidos, int faltasRealizadas, int faltasRecibidas, double eficiencia )throws IOException {
         
-        //Comprobar si el excel existe para registrar datos nuevos sin sobreescribirlo
-        java.io.File archivoExcel = new java.io.File(archivos);
-        if(archivoExcel.exists()){
-            try (FileInputStream file = new FileInputStream(archivoExcel)){
-                excel = new XSSFWorkbook(file);
-                pagina = excel.getSheet("Estadisticas"); // Si existe carga la pagina de estadisticas creada
-                if(pagina == null) { 
-                    pagina = excel.createSheet("Estadisticas"); // Si es nulo crea una nueva pagina de excel
-                }
+        Workbook excel;
+        Sheet hojaJugador;
+
+        // Verificar si el archivo ya existe
+        File archivo = new File(rutaArchivo);
+        if (archivo.exists()) {
+            try (FileInputStream fileInputStream = new FileInputStream(archivo)) {
+                excel = new XSSFWorkbook(fileInputStream);
             }
-        }else{
-            excel = new  XSSFWorkbook(); // Si no existe el documento excel lo crea
-            pagina = excel.createSheet("Estadisticas"); // Crea una pagina nueva de estadisticas
+        } else {
+            excel = new XSSFWorkbook(); // Crear nuevo archivo si no existe
         }
-        
-        // Eliminar la fila de media para escribirla con los nuevos partidos
-        for (int i = 1; i <= pagina.getLastRowNum(); i++) { 
-            Row filaActual = pagina.getRow(i);
-            if (filaActual != null) {
-                Cell primeraCelda = filaActual.getCell(0);
-                if (primeraCelda != null && primeraCelda.getCellType() == CellType.STRING) {
-                    if ("Media:".equals(primeraCelda.getStringCellValue())) {
-                        pagina.removeRow(filaActual);
+
+            // Crea una hoja nueva o usa la existente
+            hojaJugador = excel.getSheet(jugador);
+            if (hojaJugador == null) {
+                hojaJugador = excel.createSheet(jugador);
+            }
+
+            // Añade estadísticas a la hoja del jugador
+            estadisticasJugador(hojaJugador, tirosLibresRealizados, tirosLibresMetidos, tirosDoblesRealizados,
+                                tirosDoblesMetidos, tirosTriplesRealizados, tirosTriplesMetidos, FG, EFG, TS,
+                                puntos, rebotes, asistencias, robos, perdidas, taponesRealizados, taponesRecibidos,
+                                faltasRealizadas, faltasRecibidas, eficiencia);
+
+            // Escribe el archivo actualizado
+            try (FileOutputStream fileOutputStream = new FileOutputStream(archivo)) {
+                excel.write(fileOutputStream);
+            }
+        }
+
+        private void estadisticasJugador(Sheet hojaJugador, int tirosLibresRealizados, int tirosLibresMetidos, int tirosDoblesRealizados,int tirosDoblesMetidos, int tirosTriplesRealizados, int tirosTriplesMetidos, double FG, double EFG,double TS, int puntos, int rebotes, int asistencias, int robos, int perdidas, int taponesRealizados,int taponesRecibidos, int faltasRealizadas, int faltasRecibidas, double eficiencia){
+
+            Row encabezado = hojaJugador.getRow(0);
+            if (encabezado == null) {
+                encabezado = hojaJugador.createRow(0);
+                encabezado.createCell(0).setCellValue("Tiros libres realizados");
+                encabezado.createCell(1).setCellValue("Tiros libres metidos");
+                encabezado.createCell(2).setCellValue("Dobles realizados");
+                encabezado.createCell(3).setCellValue("Dobles metidos");
+                encabezado.createCell(4).setCellValue("Triples realizados");
+                encabezado.createCell(5).setCellValue("Triples metidos");
+                encabezado.createCell(6).setCellValue("FG%");
+                encabezado.createCell(7).setCellValue("eFG%");
+                encabezado.createCell(8).setCellValue("TS%");
+                encabezado.createCell(9).setCellValue("Puntos");
+                encabezado.createCell(10).setCellValue("Rebotes");
+                encabezado.createCell(11).setCellValue("Asistencias");
+                encabezado.createCell(12).setCellValue("Robos");
+                encabezado.createCell(13).setCellValue("Pérdidas");
+                encabezado.createCell(14).setCellValue("Tapones Realizados");
+                encabezado.createCell(15).setCellValue("Tapones Recibidos");
+                encabezado.createCell(16).setCellValue("Faltas Realizadas");
+                encabezado.createCell(17).setCellValue("Faltas Recibidas");
+                encabezado.createCell(18).setCellValue("Eficiencia");
+            }
+
+            // Determinar la siguiente fila disponible
+            int ultimaFila = hojaJugador.getLastRowNum() + 1;
+
+            // Crear una nueva fila para los datos
+            Row datos = hojaJugador.createRow(ultimaFila);
+            datos.createCell(0).setCellValue(tirosLibresRealizados);
+            datos.createCell(1).setCellValue(tirosLibresMetidos);
+            datos.createCell(2).setCellValue(tirosDoblesRealizados);
+            datos.createCell(3).setCellValue(tirosDoblesMetidos);
+            datos.createCell(4).setCellValue(tirosTriplesRealizados);
+            datos.createCell(5).setCellValue(tirosTriplesMetidos);
+            datos.createCell(6).setCellValue(FG);
+            datos.createCell(7).setCellValue(EFG);
+            datos.createCell(8).setCellValue(TS);
+            datos.createCell(9).setCellValue(puntos);
+            datos.createCell(10).setCellValue(rebotes);
+            datos.createCell(11).setCellValue(asistencias);
+            datos.createCell(12).setCellValue(robos);
+            datos.createCell(13).setCellValue(perdidas);
+            datos.createCell(14).setCellValue(taponesRealizados);
+            datos.createCell(15).setCellValue(taponesRecibidos);
+            datos.createCell(16).setCellValue(faltasRealizadas);
+            datos.createCell(17).setCellValue(faltasRecibidas);
+            datos.createCell(18).setCellValue(eficiencia);
+
+            // Ajustar automáticamente el tamaño de las columnas
+            for (int i = 0; i <= 18; i++) {
+                hojaJugador.autoSizeColumn(i);
+            }
+
+        }
+
+        private void calcularMediasPorEquipo(String rutaArchivo) throws IOException {
+            
+            File archivo = new File(rutaArchivo);
+            
+            Workbook excel;
+            try (FileInputStream fileInputStream = new FileInputStream(archivo)) {
+                excel = new XSSFWorkbook(fileInputStream);
+            }
+            
+            int borrarHojaMedias = excel.getSheetIndex("Medias por jugador");
+            
+            if (borrarHojaMedias != -1){
+                excel.removeSheetAt(borrarHojaMedias);
+            }
+            
+            Sheet hojaMedias = excel.createSheet("Medias por jugador");
+            
+            // Encabezados para la hoja de medias
+            Row encabezado = hojaMedias.createRow(0);
+            encabezado.createCell(0).setCellValue("Jugador");
+            encabezado.createCell(1).setCellValue("Tiros libres Realizados");
+            encabezado.createCell(2).setCellValue("Tiros libres metidos");
+            encabezado.createCell(3).setCellValue("Dobles realizados");
+            encabezado.createCell(4).setCellValue("Dobles metidos");
+            encabezado.createCell(5).setCellValue("Triples realizados");
+            encabezado.createCell(6).setCellValue("Triples metidos");
+            encabezado.createCell(7).setCellValue("FG%");
+            encabezado.createCell(8).setCellValue("eFG%");
+            encabezado.createCell(9).setCellValue("TS%");
+            encabezado.createCell(10).setCellValue("Puntos");
+            encabezado.createCell(11).setCellValue("Rebotes");
+            encabezado.createCell(12).setCellValue("Asistencias");
+            encabezado.createCell(13).setCellValue("Robos");
+            encabezado.createCell(14).setCellValue("Pérdidas");
+            encabezado.createCell(15).setCellValue("Tapones Realizados");
+            encabezado.createCell(16).setCellValue("Tapones recibidos");
+            encabezado.createCell(17).setCellValue("Faltas realizadas");
+            encabezado.createCell(18).setCellValue("Faltas recibidas");
+            encabezado.createCell(19).setCellValue("Eficiencia");
+            
+            
+            int filaMedia = 1;
+            for (int i = 0; i < excel.getNumberOfSheets();i++){
+                Sheet hojaJugador =excel.getSheetAt(i);
+                String nombreJugador = excel.getSheetName(i);
+                
+                if("Medias por jugador".equals(nombreJugador)){
+                    continue;
+                }
+                Row filaMedias = hojaMedias.createRow(filaMedia++);
+                filaMedias.createCell(0).setCellValue(nombreJugador);
+                
+                int ultimafila = hojaJugador.getLastRowNum();
+                
+                for(int columna = 0; columna < 19; columna++){
+                    double suma = 0.0;
+                    int filasDatos = 0;
+                    
+                    for(int filas = 1; filas <= ultimafila; filas++){
+                        Row fila = hojaJugador.getRow(filas);
+
+                        Cell celda = fila.getCell(columna);
+                        if (celda != null && celda.getCellType() == CellType.NUMERIC){
+                            suma += celda.getNumericCellValue();
+                            filasDatos++;
+                        }
+
+                        double media ;
+
+                        if (filasDatos > 0) {
+                            media = suma / filasDatos; 
+                        } else {
+                            media = 0.0; 
+                        }
+
+                        filaMedias.createCell(columna + 1).setCellValue(media);
+
                     }
-                }
-            }
-}
-        
-        // Busca la proxima fila disponible
-        int ultimaFila = pagina.getLastRowNum(); 
-        Row fila;
-        
-        
-        //Creamos los encabezados de las columnas
-        Row encabezado = pagina.getRow(0);
-        if (encabezado == null){
-        fila = pagina.createRow(0);
-        fila.createCell(0).setCellValue("Nombre del jugador");
-        fila.createCell(1).setCellValue("Tiros libres realizados");
-        fila.createCell(2).setCellValue("Tiros libres metidos");
-        fila.createCell(3).setCellValue("Dobles realizados");
-        fila.createCell(4).setCellValue("Dobles metidos");
-        fila.createCell(5).setCellValue("Triples realizados");
-        fila.createCell(6).setCellValue("Triples metidos");
-        fila.createCell(7).setCellValue("FG%");
-        fila.createCell(8).setCellValue("eFG%");
-        fila.createCell(9).setCellValue("TS%");
-        fila.createCell(10).setCellValue("Puntos");
-        fila.createCell(11).setCellValue("Rebotes");
-        fila.createCell(12).setCellValue("Asistencias");
-        fila.createCell(13).setCellValue("Robos");
-        fila.createCell(14).setCellValue("Pérdidas");
-        fila.createCell(15).setCellValue("Tapones Realizados");
-        fila.createCell(16).setCellValue("Tapones recibidos");
-        fila.createCell(17).setCellValue("Faltas realizadas");
-        fila.createCell(18).setCellValue("Faltas recibidas");
-        fila.createCell(19).setCellValue("Eficiencia");
-        ultimaFila ++ ; 
-        }
-        
-        //Filas con los datos recogidos
-        fila = pagina.createRow(ultimaFila + 1);
-        fila.createCell(0).setCellValue(jugador);
-        fila.createCell(1).setCellValue(tirosLibresRealizados);
-        fila.createCell(2).setCellValue(tirosLibresMetidos);
-        fila.createCell(3).setCellValue(tirosDoblesRealizados);
-        fila.createCell(4).setCellValue(tirosDoblesMetidos);
-        fila.createCell(5).setCellValue(tirosTriplesRealizados);
-        fila.createCell(6).setCellValue(tirosTriplesMetidos);
-        fila.createCell(7).setCellValue(FG);
-        fila.createCell(8).setCellValue(EFG);
-        fila.createCell(9).setCellValue(TS);
-        fila.createCell(10).setCellValue(puntos);
-        fila.createCell(11).setCellValue(rebotes);
-        fila.createCell(12).setCellValue(asistencias);
-        fila.createCell(13).setCellValue(robos);
-        fila.createCell(14).setCellValue(perdidas);
-        fila.createCell(15).setCellValue(taponesRealizados);
-        fila.createCell(16).setCellValue(taponesRecibidos);
-        fila.createCell(17).setCellValue(faltasRealizadas);
-        fila.createCell(18).setCellValue(faltasRecibidas);
-        fila.createCell(19).setCellValue(eficiencia);
-        
-        //Actualizar la ultima fila para que realice el calculo correcto de las medias
-        ultimaFila = pagina.getLastRowNum();
-        
-        //Asignamos un fondo para la celda de medias
-        CellStyle estilo = excel.createCellStyle();
-        estilo.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
-        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        
-        //Esctibir la media en la ultima fila del excel
-        Row filaMedias = pagina.createRow(ultimaFila + 2);
-        
-        //Cambiamos el estilo de la celda "Media"
-        Cell celdaMediaTexto = filaMedias.createCell(0);
-        celdaMediaTexto.setCellValue("Media:");
-        celdaMediaTexto.setCellStyle(estilo);
 
-       
-        for (int columna = 1; columna <= 19; columna++) {
-            double suma = 0.0;
-            int filasDatos = 0;
-
-            // Recorremos las filas para la columna actual
-            for (int i = 1; i <= ultimaFila; i++) {
-                Row filaActual = pagina.getRow(i);
-                if (filaActual != null) {
-                    Cell celda = filaActual.getCell(columna);
-                    if (celda != null && celda.getCellType() == CellType.NUMERIC) {
-                        System.out.println("Columna: " + columna + ", Fila: " + i + ", Valor: " + celda.getNumericCellValue());
-                        suma += celda.getNumericCellValue();
-                        filasDatos++;
+                     for (int a = 0; a <= 19; a++){
+                        hojaMedias.autoSizeColumn(a);
                     }
+        
                 }
+                
+                try (FileOutputStream fileOutputStream = new FileOutputStream(archivo)) {
+                   excel.write(fileOutputStream);
+                }
+                
             }
-            System.out.println("Columna: " + columna + ", Suma: " + suma + ", Filas válidas: " + filasDatos);
-            
-            
-            double media;
-
-            if (filasDatos > 0) {
-                media = suma / filasDatos; 
-            } else {
-                media = 0.0; 
-            }
-            
-            // Aplicar el estilo a la celda del resultado "Media"
-            Cell fondoCeldaMedia = filaMedias.createCell(columna);
-            fondoCeldaMedia.setCellValue(media);
-            fondoCeldaMedia.setCellStyle(estilo);
         }
         
-        //Ajusta el tamaño de las celdas
-        for (int i = 0; i <= 19; i++){
-            pagina.autoSizeColumn(i);
-        }
-        
-        //Escribir el documento excel
-        try (FileOutputStream archivo = new FileOutputStream(archivos)) {
-            excel.write(archivo);
-        }
-} 
-    
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         PestañaResultados = new javax.swing.JTabbedPane();
         Opcion_1 = new javax.swing.JPanel();
         Ventana_1 = new javax.swing.JPanel();
-        nombre = new javax.swing.JLabel();
-        textoNombre = new javax.swing.JTextField();
+        equipo = new javax.swing.JLabel();
+        seleccionarEquipos = new javax.swing.JComboBox<>();
+        jugador = new javax.swing.JLabel();
+        seleccionarJugadores = new javax.swing.JComboBox<>();
         tirosRealizados = new javax.swing.JLabel();
         contadorTirosLibresRealizados = new javax.swing.JSpinner();
         tirosLibresMetidos = new javax.swing.JLabel();
@@ -274,12 +351,19 @@ public class Principal extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setForeground(java.awt.Color.white);
+        getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         Ventana_1.setBackground(new java.awt.Color(0, 0, 0));
 
-        nombre.setFont(new java.awt.Font("Bookman Old Style", 3, 18)); // NOI18N
-        nombre.setForeground(new java.awt.Color(255, 255, 255));
-        nombre.setText("Nombre del jugador");
+        equipo.setFont(new java.awt.Font("Bookman Old Style", 3, 18)); // NOI18N
+        equipo.setForeground(new java.awt.Color(255, 255, 255));
+        equipo.setText("Equipo");
+
+        seleccionarEquipos.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { " ", "Chicago Bulls", "Los Angeles Lakers" }));
+
+        jugador.setFont(new java.awt.Font("Bookman Old Style", 3, 18)); // NOI18N
+        jugador.setForeground(new java.awt.Color(255, 255, 255));
+        jugador.setText("Jugador");
 
         tirosRealizados.setFont(new java.awt.Font("Bookman Old Style", 3, 18)); // NOI18N
         tirosRealizados.setForeground(new java.awt.Color(255, 255, 255));
@@ -329,52 +413,57 @@ public class Principal extends javax.swing.JFrame {
             Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(Ventana_1Layout.createSequentialGroup()
                 .addGap(107, 107, 107)
-                .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(equipos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(Ventana_1Layout.createSequentialGroup()
-                        .addComponent(tirosLibresMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(contadorTirosLibresMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jugador, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(equipos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(Ventana_1Layout.createSequentialGroup()
-                            .addComponent(nombre, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addComponent(textoNombre))
+                            .addComponent(tirosLibresMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(18, 18, 18)
+                            .addComponent(contadorTirosLibresMetidos))
                         .addGroup(Ventana_1Layout.createSequentialGroup()
                             .addComponent(tirosTriplesMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(contadorTriplesMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Ventana_1Layout.createSequentialGroup()
-                            .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                .addComponent(TirosDoblesRealizados, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(tirosDoblesMetidos, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(tirosTriplesRealizados))
-                            .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(Ventana_1Layout.createSequentialGroup()
-                                    .addGap(18, 18, 18)
-                                    .addComponent(contadorTirosDoblesRealizados, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(Ventana_1Layout.createSequentialGroup()
-                                    .addGap(18, 18, 18)
-                                    .addComponent(contadorTirosDoblesMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Ventana_1Layout.createSequentialGroup()
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(contadorTriplesRealizados, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
+                            .addComponent(contadorTriplesMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGroup(Ventana_1Layout.createSequentialGroup()
-                            .addComponent(tirosRealizados)
+                            .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(tirosDoblesMetidos, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(tirosTriplesRealizados)
+                                .addComponent(TirosDoblesRealizados, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addGroup(Ventana_1Layout.createSequentialGroup()
+                                    .addGap(18, 18, 18)
+                                    .addComponent(contadorTirosDoblesRealizados, javax.swing.GroupLayout.DEFAULT_SIZE, 169, Short.MAX_VALUE))
+                                .addGroup(Ventana_1Layout.createSequentialGroup()
+                                    .addGap(18, 18, 18)
+                                    .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(contadorTriplesRealizados, javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addComponent(contadorTirosDoblesMetidos)))))
+                        .addGroup(Ventana_1Layout.createSequentialGroup()
+                            .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(tirosRealizados)
+                                .addComponent(equipo, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGap(18, 18, 18)
-                            .addComponent(contadorTirosLibresRealizados, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addContainerGap(130, Short.MAX_VALUE))
+                            .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(seleccionarEquipos, 0, 169, Short.MAX_VALUE)
+                                .addComponent(seleccionarJugadores, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(contadorTirosLibresRealizados)))))
+                .addContainerGap(101, Short.MAX_VALUE))
         );
         Ventana_1Layout.setVerticalGroup(
             Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Ventana_1Layout.createSequentialGroup()
                 .addGap(25, 25, 25)
                 .addComponent(equipos, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 55, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(nombre)
-                    .addComponent(textoNombre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(31, 31, 31)
+                    .addComponent(equipo)
+                    .addComponent(seleccionarEquipos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jugador)
+                    .addComponent(seleccionarJugadores, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
                 .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(contadorTirosLibresRealizados, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(tirosRealizados))
@@ -543,7 +632,7 @@ public class Principal extends javax.swing.JFrame {
                         .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(perdidas)
                             .addComponent(contadorPerdidas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(img, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(img, javax.swing.GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE))
                 .addGap(61, 61, 61)
                 .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(taponesRealizados)
@@ -574,19 +663,7 @@ public class Principal extends javax.swing.JFrame {
 
         PestañaResultados.addTab("Estadisticas del Jugador", Opcion_2);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(PestañaResultados, javax.swing.GroupLayout.PREFERRED_SIZE, 609, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(PestañaResultados, javax.swing.GroupLayout.Alignment.TRAILING)
-        );
+        getContentPane().add(PestañaResultados, new org.netbeans.lib.awtextra.AbsoluteConstraints(6, 0, -1, -1));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -622,17 +699,19 @@ public class Principal extends javax.swing.JFrame {
     private javax.swing.JSpinner contadorTirosLibresRealizados;
     private javax.swing.JSpinner contadorTriplesMetidos;
     private javax.swing.JSpinner contadorTriplesRealizados;
+    private javax.swing.JLabel equipo;
     private javax.swing.JLabel equipos;
     private javax.swing.JLabel faltasRealizadas;
     private javax.swing.JLabel faltasRecibidas;
     private javax.swing.JLabel img;
-    private javax.swing.JLabel nombre;
+    private javax.swing.JLabel jugador;
     private javax.swing.JLabel perdidas;
     private javax.swing.JLabel puntos;
     private javax.swing.JLabel rebotes;
+    private javax.swing.JComboBox<String> seleccionarEquipos;
+    private javax.swing.JComboBox<String> seleccionarJugadores;
     private javax.swing.JLabel taponesRealizados;
     private javax.swing.JLabel taponesRecibidos;
-    private javax.swing.JTextField textoNombre;
     private javax.swing.JLabel tirosDoblesMetidos;
     private javax.swing.JLabel tirosLibresMetidos;
     private javax.swing.JLabel tirosRealizados;
