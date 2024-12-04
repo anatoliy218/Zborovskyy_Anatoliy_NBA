@@ -4,20 +4,39 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFrame;
+import org.apache.commons.lang3.CharUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.chart.ChartUtils;
+
 
 /**
  *
  * @author Anatoliy
  */
 public class Principal extends javax.swing.JFrame {
-
+    
     public Principal() {
         initComponents();
         this.setLocationRelativeTo(null);
         seleccionarEquipos.addActionListener(evt -> elegirEquipo());
-        botonCalcular.addActionListener(evt -> generarExcel()); 
+        botonCalcular.addActionListener(evt -> generarExcel());
+        botonCrearGrafico.addActionListener(evt -> {
+            try {
+                crearGrafico();
+            } catch (IOException ex) {
+                Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
         
     }
     
@@ -82,7 +101,6 @@ public class Principal extends javax.swing.JFrame {
         
         
         //Version 2.0 nuevos datos
-        int puntos = (Integer)contadorPuntos.getValue();
         int rebotes = (Integer)contadorRebotes.getValue();
         int asistencias = (Integer)contadorAsistencias.getValue();
         int robos = (Integer)contadorRobos.getValue();
@@ -97,7 +115,7 @@ public class Principal extends javax.swing.JFrame {
         int tirosDeCampoFallados = tirosTotales - tirosMetidos;
         
         //Calcular la eficiencia de los valores 2.0
-        double eficiencia  = (puntos + rebotes + asistencias + robos + taponesRealizados + faltasRecibidas) - (tirosDeCampoFallados + perdidas + taponesRecibidos + faltasRealizadas);
+        double eficiencia  = (puntosTotales + rebotes + asistencias + robos + taponesRealizados + faltasRecibidas) - (tirosDeCampoFallados + perdidas + taponesRecibidos + faltasRealizadas);
         
         //Panel emergente con los datos de FG,eFG y TS
         javax.swing.JOptionPane.showMessageDialog(this,"FG: " + FG + "\n" +
@@ -108,11 +126,11 @@ public class Principal extends javax.swing.JFrame {
         
         try {
             if("Chicago Bulls".equals(equipoSeleccionado)){
-                crearArchivoExce("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Chicago Bulls.xlsx", jugadorSeleccionado,tirosLibresRealizados, tirosLibresMetidos, tirosDoblesRealizados,tirosDoblesMetidos,tirosTriplesRealizados,tirosTriplesMetidos, FG, EFG, TS, puntos, rebotes , asistencias, robos, perdidas, taponesRealizados, taponesRecibidos, faltasRealizadas, faltasRecibidas,eficiencia);
+                crearArchivoExce("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Chicago Bulls.xlsx", jugadorSeleccionado,tirosLibresRealizados, tirosLibresMetidos, tirosDoblesRealizados,tirosDoblesMetidos,tirosTriplesRealizados,tirosTriplesMetidos, FG, EFG, TS, puntosTotales, rebotes , asistencias, robos, perdidas, taponesRealizados, taponesRecibidos, faltasRealizadas, faltasRecibidas,eficiencia);
                 calcularMediasPorEquipo("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Chicago Bulls.xlsx");
                 javax.swing.JOptionPane.showMessageDialog(this, "Archivo actualizado");
             }else if("Los Angeles Lakers".equals(equipoSeleccionado)){
-                crearArchivoExce("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Los Angeles Lakers.xlsx", jugadorSeleccionado,tirosLibresRealizados, tirosLibresMetidos, tirosDoblesRealizados,tirosDoblesMetidos,tirosTriplesRealizados,tirosTriplesMetidos, FG, EFG, TS, puntos, rebotes , asistencias, robos, perdidas, taponesRealizados, taponesRecibidos, faltasRealizadas, faltasRecibidas,eficiencia);
+                crearArchivoExce("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Los Angeles Lakers.xlsx", jugadorSeleccionado,tirosLibresRealizados, tirosLibresMetidos, tirosDoblesRealizados,tirosDoblesMetidos,tirosTriplesRealizados,tirosTriplesMetidos, FG, EFG, TS, puntosTotales, rebotes , asistencias, robos, perdidas, taponesRealizados, taponesRecibidos, faltasRealizadas, faltasRecibidas,eficiencia);
                 calcularMediasPorEquipo("D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Los Angeles Lakers.xlsx");
                 javax.swing.JOptionPane.showMessageDialog(this, "Archivo actualizado");
             }
@@ -303,6 +321,87 @@ public class Principal extends javax.swing.JFrame {
             }
         }
         
+        // Version 4.0
+        
+        private void crearGrafico() throws IOException {
+            String jugadorSeleccionado = (String) seleccionarJugadores.getSelectedItem();
+
+            String archivo = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Chicago Bulls.xlsx";
+
+            FileInputStream fis = new FileInputStream(archivo);
+            Workbook excelEquipo = new XSSFWorkbook(fis);
+
+            // Aquí obtenemos la hoja cuyo nombre coincide con el jugador seleccionado
+            Sheet hojaJugador = null;
+            for (int i = 0; i < excelEquipo.getNumberOfSheets(); i++) {
+                if (excelEquipo.getSheetName(i).equals(jugadorSeleccionado)) {
+                    hojaJugador = excelEquipo.getSheetAt(i);
+                    break;
+                }
+            }
+
+            if (hojaJugador == null) {
+                // Si no encontramos la hoja con el nombre del jugador seleccionado, se lanza un error o se maneja adecuadamente
+                System.out.println("No se encontró la hoja para el jugador seleccionado.");
+                return;
+            }
+
+            // Ahora que tenemos la hoja correcta, seguimos leyendo las celdas
+            ArrayList<Integer> puntos = new ArrayList<>();
+            for (Row fila : hojaJugador) {
+                Cell celdaPuntos = fila.getCell(9);
+                if (celdaPuntos != null && celdaPuntos.getCellType() == CellType.NUMERIC) {
+                    puntos.add((int) celdaPuntos.getNumericCellValue());
+                }
+            }
+
+            // Crear gráfico con los puntos obtenidos
+            JFreeChart grafico = crearGrafico(puntos, jugadorSeleccionado);
+
+            // Crear un JFrame para mostrar el gráfico en una ventana separada
+            JFrame frame = new JFrame("Gráfico de Puntos de " + jugadorSeleccionado);
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);  // Cerrar solo esta ventana, no la aplicación completa
+            ChartPanel chartPanel = new ChartPanel(grafico);
+            chartPanel.setPreferredSize(new java.awt.Dimension(800, 600)); // Ajusta el tamaño del gráfico
+            frame.getContentPane().add(chartPanel); // Agrega el gráfico al JFrame
+            frame.pack(); // Ajusta el tamaño de la ventana según el contenido
+            frame.setLocationRelativeTo(null);  // Centra la ventana
+            frame.setVisible(true);  // Muestra la ventana con el gráfico
+            
+            // Guardar el gráfico como un archivo JPG
+            String outputPath = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Graficas\\" + jugadorSeleccionado + ".jpg";
+
+            // Crea un archivo de salida en la ruta especificada
+            File outputFile = new File(outputPath);
+
+            // Guardar el gráfico como un archivo JPG
+           ChartUtils.saveChartAsJPEG(outputFile, grafico, 800, 600);  // Se especifica el tamaño de la imagen (ancho y alto)
+
+            System.out.println("Gráfico guardado en: " + outputPath);
+        }
+
+        private JFreeChart crearGrafico(ArrayList<Integer> puntos, String jugadorSeleccionado) {
+            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+            // Agregar los puntos al dataset
+            for (int i = 0; i < puntos.size(); i++) {
+                dataset.addValue(puntos.get(i), "Puntos", "Partido " + (i + 1));
+            }
+
+            // Crear el gráfico de barras con el nombre del jugador como título
+            return ChartFactory.createBarChart(
+                    "Puntos por Partido de " + jugadorSeleccionado,  // Título con el nombre del jugador
+                    "Partido",             // Eje X
+                    "Puntos",              // Eje Y
+                    dataset,               // Conjunto de datos
+                    org.jfree.chart.plot.PlotOrientation.VERTICAL,
+                    true,                  // Mostrar leyenda
+                    true,                  // Mostrar tooltips
+                    false                  // No generar URLs
+            );
+        }
+        
+        
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -328,8 +427,6 @@ public class Principal extends javax.swing.JFrame {
         equipos = new javax.swing.JLabel();
         Opcion_2 = new javax.swing.JPanel();
         Ventana_2 = new javax.swing.JPanel();
-        puntos = new javax.swing.JLabel();
-        contadorPuntos = new javax.swing.JSpinner();
         rebotes = new javax.swing.JLabel();
         contadorRebotes = new javax.swing.JSpinner();
         asistencias = new javax.swing.JLabel();
@@ -348,6 +445,7 @@ public class Principal extends javax.swing.JFrame {
         contadorFaltasRecibidas = new javax.swing.JSpinner();
         img = new javax.swing.JLabel();
         botonCalcular = new javax.swing.JButton();
+        botonCrearGrafico = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setForeground(java.awt.Color.white);
@@ -448,7 +546,7 @@ public class Principal extends javax.swing.JFrame {
                                 .addComponent(seleccionarEquipos, 0, 169, Short.MAX_VALUE)
                                 .addComponent(seleccionarJugadores, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(contadorTirosLibresRealizados)))))
-                .addContainerGap(101, Short.MAX_VALUE))
+                .addContainerGap(106, Short.MAX_VALUE))
         );
         Ventana_1Layout.setVerticalGroup(
             Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -463,7 +561,7 @@ public class Principal extends javax.swing.JFrame {
                 .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jugador)
                     .addComponent(seleccionarJugadores, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
                 .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(contadorTirosLibresRealizados, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(tirosRealizados))
@@ -494,7 +592,9 @@ public class Principal extends javax.swing.JFrame {
         Opcion_1.setLayout(Opcion_1Layout);
         Opcion_1Layout.setHorizontalGroup(
             Opcion_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(Ventana_1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(Opcion_1Layout.createSequentialGroup()
+                .addComponent(Ventana_1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         Opcion_1Layout.setVerticalGroup(
             Opcion_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -504,12 +604,6 @@ public class Principal extends javax.swing.JFrame {
         PestañaResultados.addTab("Jugador y Tiros", Opcion_1);
 
         Ventana_2.setBackground(new java.awt.Color(0, 0, 0));
-
-        puntos.setFont(new java.awt.Font("Bookman Old Style", 3, 18)); // NOI18N
-        puntos.setForeground(new java.awt.Color(255, 255, 255));
-        puntos.setText("Puntos");
-
-        contadorPuntos.setModel(new javax.swing.SpinnerNumberModel(0, 0, null, 1));
 
         rebotes.setFont(new java.awt.Font("Bookman Old Style", 3, 18)); // NOI18N
         rebotes.setForeground(new java.awt.Color(255, 255, 255));
@@ -565,6 +659,8 @@ public class Principal extends javax.swing.JFrame {
         botonCalcular.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         botonCalcular.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
 
+        botonCrearGrafico.setText("Crear Grafico");
+
         javax.swing.GroupLayout Ventana_2Layout = new javax.swing.GroupLayout(Ventana_2);
         Ventana_2.setLayout(Ventana_2Layout);
         Ventana_2Layout.setHorizontalGroup(
@@ -573,8 +669,9 @@ public class Principal extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(Ventana_2Layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(botonCalcular, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(18, 18, 18)
+                        .addComponent(botonCrearGrafico)
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(Ventana_2Layout.createSequentialGroup()
                         .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(taponesRealizados, javax.swing.GroupLayout.PREFERRED_SIZE, 185, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -582,30 +679,31 @@ public class Principal extends javax.swing.JFrame {
                             .addComponent(Robos, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(asistencias, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(rebotes, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(puntos, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(faltasRealizadas, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(18, 18, 18)
                         .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(contadorTaponesRealizados)
+                            .addComponent(contadorTaponesRealizados, javax.swing.GroupLayout.DEFAULT_SIZE, 67, Short.MAX_VALUE)
                             .addComponent(contadorRobos)
                             .addComponent(contadorAsistencias)
                             .addComponent(contadorPerdidas)
-                            .addComponent(contadorPuntos, javax.swing.GroupLayout.DEFAULT_SIZE, 81, Short.MAX_VALUE)
                             .addComponent(contadorFaltasRealizadas)
                             .addComponent(contadorRebotes))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                .addGroup(Ventana_2Layout.createSequentialGroup()
-                                    .addComponent(faltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(contadorFaltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(Ventana_2Layout.createSequentialGroup()
-                                    .addComponent(taponesRecibidos, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGap(18, 18, 18)
-                                    .addComponent(contadorTaponesRecibidos, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addGroup(Ventana_2Layout.createSequentialGroup()
+                                .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addGroup(Ventana_2Layout.createSequentialGroup()
+                                        .addComponent(faltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(contadorFaltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(Ventana_2Layout.createSequentialGroup()
+                                        .addComponent(taponesRecibidos, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(contadorTaponesRecibidos, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(botonCalcular, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(12, 12, 12))
                             .addComponent(img, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 271, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addGap(42, 42, 42))
+                .addGap(36, 36, 36))
         );
         Ventana_2Layout.setVerticalGroup(
             Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -613,10 +711,7 @@ public class Principal extends javax.swing.JFrame {
                 .addGap(55, 55, 55)
                 .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(Ventana_2Layout.createSequentialGroup()
-                        .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(puntos)
-                            .addComponent(contadorPuntos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(26, 26, 26)
+                        .addGap(48, 48, 48)
                         .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(rebotes)
                             .addComponent(contadorRebotes, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -632,7 +727,7 @@ public class Principal extends javax.swing.JFrame {
                         .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(perdidas)
                             .addComponent(contadorPerdidas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(img, javax.swing.GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE))
+                    .addComponent(img, javax.swing.GroupLayout.DEFAULT_SIZE, 271, Short.MAX_VALUE))
                 .addGap(61, 61, 61)
                 .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(taponesRealizados)
@@ -646,7 +741,9 @@ public class Principal extends javax.swing.JFrame {
                     .addComponent(faltasRealizadas)
                     .addComponent(contadorFaltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(36, 36, 36)
-                .addComponent(botonCalcular, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(botonCalcular, javax.swing.GroupLayout.DEFAULT_SIZE, 37, Short.MAX_VALUE)
+                    .addComponent(botonCrearGrafico, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(24, 24, 24))
         );
 
@@ -654,7 +751,9 @@ public class Principal extends javax.swing.JFrame {
         Opcion_2.setLayout(Opcion_2Layout);
         Opcion_2Layout.setHorizontalGroup(
             Opcion_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(Ventana_2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(Opcion_2Layout.createSequentialGroup()
+                .addComponent(Ventana_2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         Opcion_2Layout.setVerticalGroup(
             Opcion_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -663,7 +762,7 @@ public class Principal extends javax.swing.JFrame {
 
         PestañaResultados.addTab("Estadisticas del Jugador", Opcion_2);
 
-        getContentPane().add(PestañaResultados, new org.netbeans.lib.awtextra.AbsoluteConstraints(6, 0, -1, -1));
+        getContentPane().add(PestañaResultados, new org.netbeans.lib.awtextra.AbsoluteConstraints(6, 0, 590, -1));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -684,11 +783,11 @@ public class Principal extends javax.swing.JFrame {
     private javax.swing.JPanel Ventana_2;
     private javax.swing.JLabel asistencias;
     private javax.swing.JButton botonCalcular;
+    private javax.swing.JButton botonCrearGrafico;
     private javax.swing.JSpinner contadorAsistencias;
     private javax.swing.JSpinner contadorFaltasRealizadas;
     private javax.swing.JSpinner contadorFaltasRecibidas;
     private javax.swing.JSpinner contadorPerdidas;
-    private javax.swing.JSpinner contadorPuntos;
     private javax.swing.JSpinner contadorRebotes;
     private javax.swing.JSpinner contadorRobos;
     private javax.swing.JSpinner contadorTaponesRealizados;
@@ -706,7 +805,6 @@ public class Principal extends javax.swing.JFrame {
     private javax.swing.JLabel img;
     private javax.swing.JLabel jugador;
     private javax.swing.JLabel perdidas;
-    private javax.swing.JLabel puntos;
     private javax.swing.JLabel rebotes;
     private javax.swing.JComboBox<String> seleccionarEquipos;
     private javax.swing.JComboBox<String> seleccionarJugadores;
