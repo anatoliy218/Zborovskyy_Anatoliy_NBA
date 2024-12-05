@@ -325,8 +325,12 @@ public class Principal extends javax.swing.JFrame {
         
         private void crearGrafico() throws IOException {
             String jugadorSeleccionado = (String) seleccionarJugadores.getSelectedItem();
+            String seleccionarEquipo = (String) seleccionarEquipos.getSelectedItem();
+            
+            String archivo = archivo = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\"+ seleccionarEquipo + ".xlsx";
+            
+            
 
-            String archivo = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Chicago Bulls.xlsx";
 
             FileInputStream fis = new FileInputStream(archivo);
             Workbook excelEquipo = new XSSFWorkbook(fis);
@@ -369,7 +373,7 @@ public class Principal extends javax.swing.JFrame {
             frame.setVisible(true);  // Muestra la ventana con el gráfico
             
             // Guardar el gráfico como un archivo JPG
-            String outputPath = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Graficas\\" + jugadorSeleccionado + ".jpg";
+            String outputPath = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Graficas\\"+ seleccionarEquipo + " " + jugadorSeleccionado + ".jpg";
 
             // Crea un archivo de salida en la ruta especificada
             File outputFile = new File(outputPath);
