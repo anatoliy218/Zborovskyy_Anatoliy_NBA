@@ -17,6 +17,8 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.chart.ChartUtils;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 
 
 /**
@@ -329,8 +331,6 @@ public class Principal extends javax.swing.JFrame {
             
             String archivo = archivo = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\"+ seleccionarEquipo + ".xlsx";
             
-            
-
 
             FileInputStream fis = new FileInputStream(archivo);
             Workbook excelEquipo = new XSSFWorkbook(fis);
@@ -345,63 +345,102 @@ public class Principal extends javax.swing.JFrame {
             }
 
             if (hojaJugador == null) {
-                // Si no encontramos la hoja con el nombre del jugador seleccionado, se lanza un error o se maneja adecuadamente
                 System.out.println("No se encontró la hoja para el jugador seleccionado.");
                 return;
             }
 
             // Ahora que tenemos la hoja correcta, seguimos leyendo las celdas
             ArrayList<Integer> puntos = new ArrayList<>();
-            for (Row fila : hojaJugador) {
+            ArrayList<Integer> rebotes = new ArrayList<>();
+            int sumarPuntos = 0;
+
+            
+              for (Row fila : hojaJugador) {
                 Cell celdaPuntos = fila.getCell(9);
+                Cell celdaRebotes = fila.getCell(10);
+
                 if (celdaPuntos != null && celdaPuntos.getCellType() == CellType.NUMERIC) {
-                    puntos.add((int) celdaPuntos.getNumericCellValue());
+                    int valorPunto = (int) celdaPuntos.getNumericCellValue();
+                    puntos.add(valorPunto);
+                    sumarPuntos += valorPunto;
+                }
+
+                if (celdaRebotes != null && celdaRebotes.getCellType() == CellType.NUMERIC) {
+                    rebotes.add((int) celdaRebotes.getNumericCellValue());
                 }
             }
-
+              
+            // Calculamos la media de los puntos  
+            double mediaPuntos = (double) sumarPuntos / puntos.size();
+                
             // Crear gráfico con los puntos obtenidos
-            JFreeChart grafico = crearGrafico(puntos, jugadorSeleccionado);
-
-            // Crear un JFrame para mostrar el gráfico en una ventana separada
-            JFrame frame = new JFrame("Gráfico de Puntos de " + jugadorSeleccionado);
-            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);  // Cerrar solo esta ventana, no la aplicación completa
-            ChartPanel chartPanel = new ChartPanel(grafico);
-            chartPanel.setPreferredSize(new java.awt.Dimension(800, 600)); // Ajusta el tamaño del gráfico
-            frame.getContentPane().add(chartPanel); // Agrega el gráfico al JFrame
-            frame.pack(); // Ajusta el tamaño de la ventana según el contenido
-            frame.setLocationRelativeTo(null);  // Centra la ventana
-            frame.setVisible(true);  // Muestra la ventana con el gráfico
+            JFreeChart graficoPuntos = crearGraficoConMedia(puntos, jugadorSeleccionado, mediaPuntos);
+            JFreeChart graficoRebotes = crearGraficoRebotes(rebotes, jugadorSeleccionado);
             
-            // Guardar el gráfico como un archivo JPG
-            String outputPath = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\Graficas\\"+ seleccionarEquipo + " " + jugadorSeleccionado + ".jpg";
+             // Crear carpetas para guardar las gráficas
+            String carpetaBase = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\gráficas\\";
+            String carpetaJugador = carpetaBase + jugadorSeleccionado + "\\";
 
-            // Crea un archivo de salida en la ruta especificada
-            File outputFile = new File(outputPath);
+            new File(carpetaJugador).mkdirs();
 
-            // Guardar el gráfico como un archivo JPG
-           ChartUtils.saveChartAsJPEG(outputFile, grafico, 800, 600);  // Se especifica el tamaño de la imagen (ancho y alto)
+            // Guardar gráficos
+            ChartUtils.saveChartAsJPEG(new File(carpetaJugador + "Puntos.jpg"), graficoPuntos, 800, 600);
+            ChartUtils.saveChartAsJPEG(new File(carpetaJugador + "Rebotes.jpg"), graficoRebotes, 800, 600);
 
-            System.out.println("Gráfico guardado en: " + outputPath);
+            javax.swing.JOptionPane.showMessageDialog(this,"Gráficas guardadas en: " + carpetaJugador);
         }
 
-        private JFreeChart crearGrafico(ArrayList<Integer> puntos, String jugadorSeleccionado) {
+        private JFreeChart crearGraficoConMedia(ArrayList<Integer> puntos, String jugadorSeleccionado, double mediaPuntos) {
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
-            // Agregar los puntos al dataset
             for (int i = 0; i < puntos.size(); i++) {
                 dataset.addValue(puntos.get(i), "Puntos", "Partido " + (i + 1));
             }
 
-            // Crear el gráfico de barras con el nombre del jugador como título
-            return ChartFactory.createBarChart(
-                    "Puntos por Partido de " + jugadorSeleccionado,  // Título con el nombre del jugador
-                    "Partido",             // Eje X
-                    "Puntos",              // Eje Y
-                    dataset,               // Conjunto de datos
+            DefaultCategoryDataset datasetMedia = new DefaultCategoryDataset();
+            for (int i = 0; i < puntos.size(); i++) {
+                datasetMedia.addValue(mediaPuntos, "Media", "Partido " + (i + 1));
+            }
+
+            JFreeChart chart = ChartFactory.createBarChart(
+                    "Puntos por Partido de " + jugadorSeleccionado,
+                    "Partido",
+                    "Puntos",
+                    dataset,
                     org.jfree.chart.plot.PlotOrientation.VERTICAL,
-                    true,                  // Mostrar leyenda
-                    true,                  // Mostrar tooltips
-                    false                  // No generar URLs
+                    true,
+                    true,
+                    false
+            );
+
+            CategoryPlot plot = chart.getCategoryPlot();
+
+            // Añadir la línea de la media
+            LineAndShapeRenderer renderer = new LineAndShapeRenderer();
+            plot.setDataset(1, datasetMedia);
+            plot.mapDatasetToRangeAxis(1, 0);
+            plot.setRenderer(1, renderer);
+
+            return chart;
+        }
+
+        // Método para crear el gráfico de rebotes
+        private JFreeChart crearGraficoRebotes(ArrayList<Integer> rebotes, String jugadorSeleccionado) {
+            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+            for (int i = 0; i < rebotes.size(); i++) {
+                dataset.addValue(rebotes.get(i), "Rebotes", "Partido " + (i + 1));
+            }
+
+            return ChartFactory.createLineChart(
+                    "Rebotes por Partido de " + jugadorSeleccionado,
+                    "Partido",
+                    "Rebotes",
+                    dataset,
+                    org.jfree.chart.plot.PlotOrientation.VERTICAL,
+                    true,
+                    true,
+                    false
             );
         }
         
