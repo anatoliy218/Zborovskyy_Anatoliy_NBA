@@ -1,5 +1,10 @@
 package com.mycompany.nba;
 
+import com.itextpdf.io.image.ImageData;
+import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -7,13 +12,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JFrame;
-import org.apache.commons.lang3.CharUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Image;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.properties.TextAlignment;
+import javax.swing.JOptionPane;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.chart.ChartUtils;
@@ -32,6 +39,10 @@ public class Principal extends javax.swing.JFrame {
         this.setLocationRelativeTo(null);
         seleccionarEquipos.addActionListener(evt -> elegirEquipo());
         botonCalcular.addActionListener(evt -> generarExcel());
+        generarPDF.addActionListener(evt -> generarPDF());
+        
+        // Rango minimo de la ventana
+        setResizable(false); // No permite modificar los parametros de ventana 
         botonCrearGrafico.addActionListener(evt -> {
             try {
                 crearGrafico();
@@ -323,7 +334,7 @@ public class Principal extends javax.swing.JFrame {
             }
         }
         
-        // Version 4.0
+        // Version 4.0 y se añaden asistencias para la version 5.0
         
         private void crearGrafico() throws IOException {
             String jugadorSeleccionado = (String) seleccionarJugadores.getSelectedItem();
@@ -352,12 +363,13 @@ public class Principal extends javax.swing.JFrame {
             // Ahora que tenemos la hoja correcta, seguimos leyendo las celdas
             ArrayList<Integer> puntos = new ArrayList<>();
             ArrayList<Integer> rebotes = new ArrayList<>();
+            ArrayList<Integer> asistencias = new ArrayList<>();
             int sumarPuntos = 0;
 
-            
-              for (Row fila : hojaJugador) {
+            for (Row fila : hojaJugador) {
                 Cell celdaPuntos = fila.getCell(9);
                 Cell celdaRebotes = fila.getCell(10);
+                Cell celdaAsistencias = fila.getCell(11);
 
                 if (celdaPuntos != null && celdaPuntos.getCellType() == CellType.NUMERIC) {
                     int valorPunto = (int) celdaPuntos.getNumericCellValue();
@@ -368,6 +380,10 @@ public class Principal extends javax.swing.JFrame {
                 if (celdaRebotes != null && celdaRebotes.getCellType() == CellType.NUMERIC) {
                     rebotes.add((int) celdaRebotes.getNumericCellValue());
                 }
+
+                if (celdaAsistencias != null && celdaAsistencias.getCellType() == CellType.NUMERIC) {
+                    asistencias.add((int) celdaAsistencias.getNumericCellValue());
+                }
             }
               
             // Calculamos la media de los puntos  
@@ -376,6 +392,7 @@ public class Principal extends javax.swing.JFrame {
             // Crear gráfico con los puntos obtenidos
             JFreeChart graficoPuntos = crearGraficoConMedia(puntos, jugadorSeleccionado, mediaPuntos);
             JFreeChart graficoRebotes = crearGraficoRebotes(rebotes, jugadorSeleccionado);
+             JFreeChart graficoAsistencias = crearGraficoAsistencias(asistencias, jugadorSeleccionado);
             
              // Crear carpetas para guardar las gráficas
             String carpetaBase = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\gráficas\\";
@@ -386,10 +403,12 @@ public class Principal extends javax.swing.JFrame {
             // Guardar gráficos
             ChartUtils.saveChartAsJPEG(new File(carpetaJugador + "Puntos.jpg"), graficoPuntos, 800, 600);
             ChartUtils.saveChartAsJPEG(new File(carpetaJugador + "Rebotes.jpg"), graficoRebotes, 800, 600);
-
+             ChartUtils.saveChartAsJPEG(new File(carpetaJugador + "Asistencias.jpg"), graficoAsistencias, 800, 600);
+             
             javax.swing.JOptionPane.showMessageDialog(this,"Gráficas guardadas en: " + carpetaJugador);
         }
-
+        
+        // Crear el gráfico de puntos
         private JFreeChart crearGraficoConMedia(ArrayList<Integer> puntos, String jugadorSeleccionado, double mediaPuntos) {
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
@@ -424,7 +443,7 @@ public class Principal extends javax.swing.JFrame {
             return chart;
         }
 
-        // Método para crear el gráfico de rebotes
+        // Crear el gráfico de rebotes
         private JFreeChart crearGraficoRebotes(ArrayList<Integer> rebotes, String jugadorSeleccionado) {
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
@@ -443,6 +462,166 @@ public class Principal extends javax.swing.JFrame {
                     false
             );
         }
+        
+        // Version 5.0
+        
+        // Crear el grafico de asistencias 
+        private JFreeChart crearGraficoAsistencias(ArrayList<Integer> asistencias, String jugadorSeleccionado) {
+            // Crear la serie de datos
+            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+            for (int i = 0; i < asistencias.size(); i++) {
+                dataset.addValue(asistencias.get(i), "Asistencias", "Juego " + (i + 1));
+            }
+
+            // Crear el gráfico de barras
+            JFreeChart chart = ChartFactory.createBarChart(
+                    "Asistencias de " + jugadorSeleccionado,
+                    "Juegos",
+                    "Asistencias",
+                    dataset
+            );
+
+            return chart;
+        }
+        
+        
+        // Generar PDF
+        private void generarPDF() {
+            String jugadorSeleccionado = (String) seleccionarJugadores.getSelectedItem();
+            String equipoSeleccionado = (String) seleccionarEquipos.getSelectedItem();
+
+            try {
+                // Ruta para crear la carpeta del equipo si no existe
+                String carpetaEquipo = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\PDF\\" + equipoSeleccionado + "\\";
+
+                // Crear la carpeta del equipo si no existe
+                new File(carpetaEquipo).mkdirs();
+
+                // Ruta del PDF, dentro de la carpeta del equipo
+                String rutaPDF = carpetaEquipo + jugadorSeleccionado + ".pdf";
+
+                // Crear el PDF
+                PdfWriter writer = new PdfWriter(new FileOutputStream(rutaPDF));
+                PdfDocument pdf = new PdfDocument(writer);
+                Document document = new Document(pdf, PageSize.A4, false);
+                document.setMargins(10, 10, 10, 10);
+
+                // Añadir título al PDF
+                Paragraph titulo = new Paragraph("Estadísticas de " + jugadorSeleccionado + " - " + equipoSeleccionado)
+                        .setFontSize(16)
+                        .setBold()
+                        .setTextAlignment(TextAlignment.CENTER);
+
+                document.add(titulo);
+                document.add(new Paragraph("\n"));
+
+                // Agregar gráficos y estadísticas al PDF
+                agregarGraficosAlPDF(document, jugadorSeleccionado);
+                agregarOtrasEstadisticas(document, jugadorSeleccionado);
+
+                document.close();
+
+                JOptionPane.showMessageDialog(this, "PDF de: " + jugadorSeleccionado + " " + equipoSeleccionado + " creado");
+
+            } catch (Exception e) {
+                javax.swing.JOptionPane.showMessageDialog(this, "No se ha podido generar el PDF. Revisa si tienes creadas las gráficas y el archivo Excel: " + e.getMessage());
+            }
+        }
+        
+        private void agregarGraficosAlPDF(Document document, String jugadorSeleccionado) throws IOException {
+            String carpetaGraficos = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\gráficas\\" + jugadorSeleccionado + "\\";
+
+            ImageData graficoPuntos = ImageDataFactory.create(carpetaGraficos + "Puntos.jpg");
+            Image graficoPuntosImage = new Image(graficoPuntos);
+            graficoPuntosImage.scaleToFit(300, 200);  
+            document.add(new Paragraph("Gráfico de Puntos:"));
+            document.add(graficoPuntosImage);
+
+            ImageData graficoRebotes = ImageDataFactory.create(carpetaGraficos + "Rebotes.jpg");
+            Image graficoRebotesImage = new Image(graficoRebotes);
+            graficoRebotesImage.scaleToFit(300, 200);  
+            document.add(new Paragraph("Gráfico de Rebotes:"));
+            document.add(graficoRebotesImage);
+
+            ImageData graficoAsistencias = ImageDataFactory.create(carpetaGraficos + "Asistencias.jpg");
+            Image graficoAsistenciasImage = new Image(graficoAsistencias);
+            graficoAsistenciasImage.scaleToFit(300, 200);  
+            document.add(new Paragraph("Gráfico de Asistencias:"));
+            document.add(graficoAsistenciasImage);
+}
+        
+        private void agregarOtrasEstadisticas(Document document, String jugadorSeleccionado) throws IOException {
+
+             String seleccionarEquipo = (String) seleccionarEquipos.getSelectedItem();
+
+             // Ruta del archivo Excel basado en el equipo seleccionado
+             String archivo = "D:\\GSDAM 2º\\Desarrollo de interfaces (DI)\\NBA\\" + seleccionarEquipo + ".xlsx"; 
+             FileInputStream fis = new FileInputStream(archivo);
+             Workbook workbook = new XSSFWorkbook(fis);
+
+             // Buscar la hoja "Medias por jugador"
+             Sheet hojaJugador = workbook.getSheet("Medias por jugador");
+
+             if (hojaJugador == null) {
+                 document.add(new Paragraph("No se encontraron estadísticas para el equipo " + seleccionarEquipo));
+                 workbook.close();
+                 return;
+             }
+
+             // Leer las columnas relevantes para el jugador seleccionado
+             double mediaTriplesMetidos = 0, mediaFG = 0, mediaEFG = 0, mediaTS = 0;
+             boolean jugadorEncontrado = false;
+
+             // Buscar el jugador en la primera columna
+             for (Row fila : hojaJugador) {
+                 if (fila.getRowNum() == 0) continue; // Saltar la fila de encabezado
+
+                 Cell celdaJugador = fila.getCell(0); // Suponemos que el nombre del jugador está en la columna 0
+                 if (celdaJugador != null && celdaJugador.getCellType() == CellType.STRING 
+                     && celdaJugador.getStringCellValue().equals(jugadorSeleccionado)) {
+
+                     // El jugador fue encontrado, ahora extraemos las estadísticas
+                     jugadorEncontrado = true;
+
+                     // Leer valores de las columnas relevantes
+                     Cell celdaTriplesMetidos = fila.getCell(6);
+                     Cell celdaFG = fila.getCell(7);             
+                     Cell celdaEFG = fila.getCell(8);            
+                     Cell celdaTS = fila.getCell(9);             
+
+                     if (celdaTriplesMetidos != null && celdaTriplesMetidos.getCellType() == CellType.NUMERIC) {
+                         mediaTriplesMetidos = celdaTriplesMetidos.getNumericCellValue();
+                     }
+                     if (celdaFG != null && celdaFG.getCellType() == CellType.NUMERIC) {
+                         mediaFG = celdaFG.getNumericCellValue();
+                     }
+                     if (celdaEFG != null && celdaEFG.getCellType() == CellType.NUMERIC) {
+                         mediaEFG = celdaEFG.getNumericCellValue();
+                     }
+                     if (celdaTS != null && celdaTS.getCellType() == CellType.NUMERIC) {
+                         mediaTS = celdaTS.getNumericCellValue();
+                     }
+                     break;
+                 }
+             }
+
+             if (!jugadorEncontrado) {
+                 document.add(new Paragraph("No se encontraron estadísticas para el jugador " + jugadorSeleccionado));
+                 workbook.close();
+                 return;
+             }
+
+             // Agregar contenido al PDF
+             document.add(new Paragraph("Otras estadísticas de: " + jugadorSeleccionado).setBold());
+
+             // Primera línea con las estadísticas
+             document.add(new Paragraph(String.format("Triples metidos por partido: %.2f", mediaTriplesMetidos)));
+
+             // Segunda línea con las estadísticas restantes
+             document.add(new Paragraph(String.format("FG%%: %.2f%%    eFG%%: %.2f%%    TS%%: %.2f%%", mediaFG, mediaEFG, mediaTS)));
+
+             workbook.close();
+         }
         
         
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -489,6 +668,7 @@ public class Principal extends javax.swing.JFrame {
         img = new javax.swing.JLabel();
         botonCalcular = new javax.swing.JButton();
         botonCrearGrafico = new javax.swing.JButton();
+        generarPDF = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setForeground(java.awt.Color.white);
@@ -555,16 +735,14 @@ public class Principal extends javax.swing.JFrame {
             .addGroup(Ventana_1Layout.createSequentialGroup()
                 .addGap(107, 107, 107)
                 .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jugador, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(equipos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(Ventana_1Layout.createSequentialGroup()
                             .addComponent(tirosLibresMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGap(18, 18, 18)
                             .addComponent(contadorTirosLibresMetidos))
                         .addGroup(Ventana_1Layout.createSequentialGroup()
                             .addComponent(tirosTriplesMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(contadorTriplesMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGroup(Ventana_1Layout.createSequentialGroup()
                             .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -574,21 +752,25 @@ public class Principal extends javax.swing.JFrame {
                             .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                 .addGroup(Ventana_1Layout.createSequentialGroup()
                                     .addGap(18, 18, 18)
-                                    .addComponent(contadorTirosDoblesRealizados, javax.swing.GroupLayout.DEFAULT_SIZE, 169, Short.MAX_VALUE))
+                                    .addComponent(contadorTirosDoblesRealizados))
                                 .addGroup(Ventana_1Layout.createSequentialGroup()
                                     .addGap(18, 18, 18)
                                     .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addComponent(contadorTriplesRealizados, javax.swing.GroupLayout.Alignment.TRAILING)
-                                        .addComponent(contadorTirosDoblesMetidos)))))
+                                        .addComponent(contadorTirosDoblesMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                         .addGroup(Ventana_1Layout.createSequentialGroup()
-                            .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(tirosRealizados)
-                                .addComponent(equipo, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(tirosRealizados)
                             .addGap(18, 18, 18)
+                            .addComponent(contadorTirosLibresRealizados)))
+                    .addComponent(jugador, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(equipos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(Ventana_1Layout.createSequentialGroup()
+                            .addComponent(equipo, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(33, 33, 33)
                             .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                 .addComponent(seleccionarEquipos, 0, 169, Short.MAX_VALUE)
-                                .addComponent(seleccionarJugadores, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(contadorTirosLibresRealizados)))))
+                                .addComponent(seleccionarJugadores, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
                 .addContainerGap(106, Short.MAX_VALUE))
         );
         Ventana_1Layout.setVerticalGroup(
@@ -604,7 +786,7 @@ public class Principal extends javax.swing.JFrame {
                 .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jugador)
                     .addComponent(seleccionarJugadores, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
+                .addGap(49, 49, 49)
                 .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(contadorTirosLibresRealizados, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(tirosRealizados))
@@ -628,7 +810,7 @@ public class Principal extends javax.swing.JFrame {
                 .addGroup(Ventana_1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(tirosTriplesMetidos)
                     .addComponent(contadorTriplesMetidos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(81, 81, 81))
+                .addContainerGap(60, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout Opcion_1Layout = new javax.swing.GroupLayout(Opcion_1);
@@ -704,17 +886,15 @@ public class Principal extends javax.swing.JFrame {
 
         botonCrearGrafico.setText("Crear Grafico");
 
+        generarPDF.setText("PDF");
+
         javax.swing.GroupLayout Ventana_2Layout = new javax.swing.GroupLayout(Ventana_2);
         Ventana_2.setLayout(Ventana_2Layout);
         Ventana_2Layout.setHorizontalGroup(
             Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Ventana_2Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(Ventana_2Layout.createSequentialGroup()
-                        .addGap(18, 18, 18)
-                        .addComponent(botonCrearGrafico)
-                        .addGap(0, 0, Short.MAX_VALUE))
+                .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(Ventana_2Layout.createSequentialGroup()
                         .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(taponesRealizados, javax.swing.GroupLayout.PREFERRED_SIZE, 185, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -725,28 +905,40 @@ public class Principal extends javax.swing.JFrame {
                             .addComponent(faltasRealizadas, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(18, 18, 18)
                         .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(contadorTaponesRealizados, javax.swing.GroupLayout.DEFAULT_SIZE, 67, Short.MAX_VALUE)
+                            .addComponent(contadorTaponesRealizados)
                             .addComponent(contadorRobos)
                             .addComponent(contadorAsistencias)
                             .addComponent(contadorPerdidas)
                             .addComponent(contadorFaltasRealizadas)
-                            .addComponent(contadorRebotes))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(Ventana_2Layout.createSequentialGroup()
-                                .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addGroup(Ventana_2Layout.createSequentialGroup()
-                                        .addComponent(faltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(contadorFaltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(contadorRebotes, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE))))
+                    .addGroup(Ventana_2Layout.createSequentialGroup()
+                        .addGap(18, 18, 18)
+                        .addComponent(botonCrearGrafico)
+                        .addGap(18, 18, 18)
+                        .addComponent(generarPDF, javax.swing.GroupLayout.PREFERRED_SIZE, 97, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(Ventana_2Layout.createSequentialGroup()
+                        .addGap(21, 21, 21)
+                        .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(botonCalcular, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(Ventana_2Layout.createSequentialGroup()
+                                .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Ventana_2Layout.createSequentialGroup()
+                                        .addComponent(faltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, 171, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(18, 18, 18))
                                     .addGroup(Ventana_2Layout.createSequentialGroup()
                                         .addComponent(taponesRecibidos, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(contadorTaponesRecibidos, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(botonCalcular, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(12, 12, 12))
-                            .addComponent(img, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 271, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addGap(36, 36, 36))
+                                        .addGap(9, 9, 9)))
+                                .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addComponent(contadorTaponesRecibidos, javax.swing.GroupLayout.DEFAULT_SIZE, 67, Short.MAX_VALUE)
+                                    .addComponent(contadorFaltasRecibidas))
+                                .addGap(15, 15, 15))))
+                    .addGroup(Ventana_2Layout.createSequentialGroup()
+                        .addGap(44, 44, 44)
+                        .addComponent(img, javax.swing.GroupLayout.PREFERRED_SIZE, 271, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(67, 67, 67))
         );
         Ventana_2Layout.setVerticalGroup(
             Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -770,7 +962,7 @@ public class Principal extends javax.swing.JFrame {
                         .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(perdidas)
                             .addComponent(contadorPerdidas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addComponent(img, javax.swing.GroupLayout.DEFAULT_SIZE, 271, Short.MAX_VALUE))
+                    .addComponent(img, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(61, 61, 61)
                 .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(taponesRealizados)
@@ -782,10 +974,11 @@ public class Principal extends javax.swing.JFrame {
                     .addComponent(faltasRecibidas)
                     .addComponent(contadorFaltasRealizadas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(faltasRealizadas)
-                    .addComponent(contadorFaltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(36, 36, 36)
+                    .addComponent(contadorFaltasRecibidas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(29, 29, 29)
                 .addGroup(Ventana_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(botonCalcular, javax.swing.GroupLayout.DEFAULT_SIZE, 37, Short.MAX_VALUE)
+                    .addComponent(generarPDF, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(botonCrearGrafico, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(24, 24, 24))
         );
@@ -795,7 +988,7 @@ public class Principal extends javax.swing.JFrame {
         Opcion_2Layout.setHorizontalGroup(
             Opcion_2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(Opcion_2Layout.createSequentialGroup()
-                .addComponent(Ventana_2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(Ventana_2, javax.swing.GroupLayout.PREFERRED_SIZE, 601, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
         Opcion_2Layout.setVerticalGroup(
@@ -845,6 +1038,7 @@ public class Principal extends javax.swing.JFrame {
     private javax.swing.JLabel equipos;
     private javax.swing.JLabel faltasRealizadas;
     private javax.swing.JLabel faltasRecibidas;
+    private javax.swing.JButton generarPDF;
     private javax.swing.JLabel img;
     private javax.swing.JLabel jugador;
     private javax.swing.JLabel perdidas;
